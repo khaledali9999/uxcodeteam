@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UXCode – تصميم يلمس المستخدم</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+          colors: {
+            brand: '#3B82F6',
+            brandDark: '#1D4ED8',
+            surface: '#0F172A',
+            card: '#1E293B',
+            cardHover: '#263148',
+            border: '#1E3A5F',
+            textMuted: '#94A3B8',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    * { font-family: 'Cairo', sans-serif; }
+    html { scroll-behavior: smooth; }
+    body { background-color: #0F172A; color: #F1F5F9; overflow-x: hidden; }
+
+    /* ===================== KEYFRAMES ===================== */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    @keyframes barFill {
+      from { width: 0%; }
+      to   { width: 100%; }
+    }
+    @keyframes dotBounce {
+      0%, 100% { transform: translateY(0); }
+      40%       { transform: translateY(-7px); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-14px); }
+    }
+    @keyframes loaderExit {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-100%); }
+    }
+
+    /* ===================== LOADER ===================== */
+    #page-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0F172A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    #page-loader.exit {
+      animation: loaderExit 0.65s cubic-bezier(0.76,0,0.24,1) forwards;
+    }
+    .loader-logo {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      animation: fadeUp 0.45s ease both;
+    }
+    .loader-logo span {
+      background: linear-gradient(90deg, #60A5FA, #3B82F6, #818CF8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .loader-bar-wrap {
+      width: 160px;
+      height: 2px;
+      background: rgba(59,130,246,0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .loader-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3B82F6, #818CF8);
+      border-radius: 99px;
+      animation: barFill 1s cubic-bezier(0.4,0,0.2,1) 0.2s forwards;
+    }
+    .loader-dots {
+      display: flex;
+      gap: 6px;
+      animation: fadeIn 0.3s ease 0.15s both;
+    }
+    .loader-dots span {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #3B82F6;
+    }
+    .loader-dots span:nth-child(1) { animation: dotBounce 0.8s ease 0.4s 3; }
+    .loader-dots span:nth-child(2) { animation: dotBounce 0.8s ease 0.55s 3; }
+    .loader-dots span:nth-child(3) { animation: dotBounce 0.8s ease 0.7s 3; }
+
+    /* ===================== HERO ENTRANCE ===================== */
+    /* elements start hidden, class 'ready' triggers the animation */
+    .hero-anim { opacity: 0; }
+    .ready .hero-anim { animation: fadeUp 0.6s ease forwards; }
+
+    .ready #hero-badge  { animation-delay: 0.05s; }
+    .ready #hero-title  { animation-delay: 0.15s; }
+    .ready #hero-sub    { animation-delay: 0.25s; }
+    .ready #hero-badges { animation-delay: 0.35s; }
+    .ready #hero-btns   { animation-delay: 0.42s; }
+    .ready #hero-img    { animation-delay: 0.3s; }
+
+    /* Nav entrance */
+    nav { opacity: 0; }
+    nav.ready { animation: fadeIn 0.5s ease 0.1s forwards; }
+
+    /* ===================== HERO IMAGE FLOAT ===================== */
+    .hero-img-wrap img {
+      filter: drop-shadow(0 0 40px rgba(59,130,246,0.18));
+    }
+    .float-anim {
+      animation: float 2.5s ease-in-out infinite;
+    }
+
+    /* ===================== SCROLL REVEAL ===================== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* stagger siblings inside a grid */
+    .reveal-group .reveal:nth-child(1) { transition-delay: 0s; }
+    .reveal-group .reveal:nth-child(2) { transition-delay: 0.08s; }
+    .reveal-group .reveal:nth-child(3) { transition-delay: 0.16s; }
+    .reveal-group .reveal:nth-child(4) { transition-delay: 0.08s; }
+    .reveal-group .reveal:nth-child(5) { transition-delay: 0.16s; }
+    .reveal-group .reveal:nth-child(6) { transition-delay: 0.24s; }
+
+    /* ===================== GLOW ===================== */
+    .glow-blue { text-shadow: 0 0 40px rgba(59,130,246,0.4); }
+    .card-glow:hover { box-shadow: 0 0 30px rgba(59,130,246,0.15); }
+    .btn-glow { box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
+    .btn-glow:hover { box-shadow: 0 6px 28px rgba(59,130,246,0.6); }
+
+    /* ===================== GRADIENT TEXT ===================== */
+    .gradient-text {
+      background: linear-gradient(90deg, #60A5FA, #3B82F6, #818CF8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ===================== HERO BG ===================== */
+    .hero-bg {
+      background-color: #0F172A;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ===================== MISC ===================== */
+    .section-divider {
+      background: linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent);
+      height: 1px;
+    }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details[open] .faq-icon { transform: rotate(45deg); }
+    .faq-icon { transition: transform 0.3s ease; }
+    .step-line { background: linear-gradient(90deg, #3B82F6, #818CF8); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 3px; }
+    nav { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+    /* ===================== REDUCED MOTION ===================== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal, .hero-anim, nav { opacity: 1 !important; transform: none !important; }
+      #page-loader { display: none !important; }
+    }
+    /* ===================== SMOOTH SCROLL OFFSET ===================== */
+:target { scroll-margin-top: 80px; }
+
+/* ===================== NAV ACTIVE ===================== */
+.nav-link.active { color: #fff; }
+
+/* ===================== COUNTER ===================== */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.counter-val { animation: countUp 0.6s ease forwards; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- ========================= LOADER ========================= -->
+  <div id="page-loader" aria-hidden="true">
+    <div class="loader-logo">UX<span>Code</span></div>
+    <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+    <div class="loader-dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <!-- ========================= NAVBAR ========================= -->
+ <nav id="main-nav" class="fixed top-0 inset-x-0 z-50 bg-surface/80 border-b border-border/50">
+  <div class="max-w-6xl mx-auto px-6 py-1 flex items-center justify-between">
+    <!-- Logo -->
+   <a href="#" class="flex items-center">
+      <img src="/WhatsApp Image 2026-06-08 at 02.47.25.png" alt="UXCode" class="h-16 w-auto object-contain"> </a>
+
+    <!-- Desktop Links -->
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-textMuted">
+      <a href="#services"  class="nav-link hover:text-white transition-colors">خدماتنا</a>
+<a href="#portfolio" class="nav-link hover:text-white transition-colors">أعمالنا</a>
+<a href="#contact"   class="nav-link hover:text-white transition-colors">من نحن</a>
+<a href="#contact"   class="nav-link hover:text-white transition-colors">تواصل</a>
+    </div>
+
+    <!-- Desktop CTA + Mobile Hamburger -->
+    <div class="flex items-center gap-3">
+      <a href="#contact" class="hidden md:inline-flex btn-glow bg-brand hover:bg-brandDark text-white text-sm font-bold px-5 py-2 rounded-full transition-all duration-200">
+        ابدأ مشروعك
+      </a>
+      <!-- Hamburger -->
+      <button id="menu-toggle" class="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-lg border border-border hover:border-blue-500/50 transition-colors" aria-label="القائمة">
+        <span class="ham-line block w-5 h-0.5 bg-textMuted rounded transition-all duration-300"></span>
+        <span class="ham-line block w-5 h-0.5 bg-textMuted rounded transition-all duration-300"></span>
+        <span class="ham-line block w-5 h-0.5 bg-textMuted rounded transition-all duration-300"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="md:hidden overflow-hidden max-h-0 transition-all duration-300 ease-in-out border-t border-border/0">
+    <div class="px-6 py-4 flex flex-col gap-4 text-sm font-medium text-textMuted bg-surface/95">
+      <a href="#services"  onclick="closeMobileMenu()" class="hover:text-white transition-colors py-1 border-b border-border/30">خدماتنا</a>
+      <a href="#portfolio" onclick="closeMobileMenu()" class="hover:text-white transition-colors py-1 border-b border-border/30">أعمالنا</a>
+      <a href="#contact"   onclick="closeMobileMenu()" class="hover:text-white transition-colors py-1 border-b border-border/30">من نحن</a>
+      <a href="#contact"   onclick="closeMobileMenu()" class="hover:text-white transition-colors py-1 border-b border-border/30">تواصل</a>
+      <a href="#contact"   onclick="closeMobileMenu()" class="btn-glow bg-brand text-white font-bold px-5 py-2.5 rounded-full text-center transition-all duration-200 mt-1">
+        ابدأ مشروعك
+      </a>
+    </div>
+  </div>
+</nav>
+
+  <!-- ========================= HERO ========================= -->
+  <section id="hero-section" class="hero-bg relative min-h-screen flex items-center pt-20 overflow-hidden">
+    <div class="max-w-6xl mx-auto px-6 w-full pt-12 pb-24 grid md:grid-cols-2 gap-12 items-center">
+
+      <!-- Text -->
+      <div class="order-2 md:order-1">
+        <div id="hero-badge" class="hero-anim mb-6">
+          <span class="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-semibold px-4 py-1.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+            DIGITAL POWERHOUSE
+          </span>
+        </div>
+        <h1 id="hero-title" class="hero-anim text-4xl md:text-5xl font-black leading-tight mb-3">
+          تصميم يلمس المستخدم،<br />
+          <span class="gradient-text glow-blue">وكود يبني المستقبل.</span>
+        </h1>
+        <p id="hero-sub" class="hero-anim text-textMuted text-base md:text-lg leading-relaxed mb-8 max-w-lg">
+          نحن فريق UI/UX Designer & Full-Stack Developer نجمع بين جمال التصميم ودقة البرمجة لبناء تطبيقات ويب وموبايل سريعة وجذابة وقابلة للتوسع.
+        </p>
+        <div id="hero-badges" class="hero-anim flex flex-wrap gap-2 mb-8 text-xs font-semibold text-textMuted">
+          <span class="bg-card border border-border px-3 py-1 rounded-full">Tailwind</span>
+          <span class="bg-card border border-border px-3 py-1 rounded-full">Figma</span>
+          <span class="bg-card border border-border px-3 py-1 rounded-full">Node.js</span>
+          <span class="bg-card border border-border px-3 py-1 rounded-full">React</span>
+          <span class="bg-card border border-border px-3 py-1 rounded-full">TypeScript</span>
+        </div>
+        <div id="hero-btns" class="hero-anim flex items-center gap-4">
+          <a href="#contact" class="btn-glow bg-brand hover:bg-brandDark text-white font-bold px-7 py-3 rounded-full transition-all duration-200 text-sm">
+            ابدأ مشروعك
+          </a>
+          <a href="#services" class="border border-border hover:border-blue-500/60 text-textMuted hover:text-white font-medium px-7 py-3 rounded-full transition-all duration-200 text-sm">
+            تواصل معنا
+          </a>
+        </div>
+      </div>
+
+      <!-- Image -->
+      <div class="order-1 md:order-2 flex justify-center">
+        <div id="hero-img" class="hero-img-wrap hero-anim">
+          <img
+            src="/اخيره.png"
+            alt="تصميم رقمي متكامل"
+            class="float-anim w-full max-w-[380px] md:max-w-[480px] object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= SERVICES ========================= -->
+  <section id="services" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <h2 class="text-3xl md:text-4xl font-black mb-3">خدماتنا</h2>
+        <div class="section-divider w-24 mx-auto mt-4"></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-center reveal-group">
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 group reveal">
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-5 group-hover:bg-blue-500/20 transition-colors mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">لوحة تحكم وأنظمة</h3>
+          <p class="text-textMuted text-sm leading-relaxed">تصميم وتطوير لوحات تحكم تفاعلية تشمل Dashboards لإدارة البيانات والمنتجات وتبسيط مختلف التعقيدات.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 group reveal">
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-5 group-hover:bg-blue-500/20 transition-colors mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">تطوير الويب والتطبيقات</h3>
+          <p class="text-textMuted text-sm leading-relaxed">تحويل التصاميم إلى كود يعمل بكفاءة، بناء تطبيقات متكاملة Full-Stack قابلة للتوسع المستقبلي.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 group reveal">
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-5 group-hover:bg-blue-500/20 transition-colors mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">تصميم واجهات UI/UX</h3>
+          <p class="text-textMuted text-sm leading-relaxed">تصميم تجارب سلسة ومدروسة تضع المستخدم في القلب، أجمل تجربة بصرية ممكنة لعملائك.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 group reveal">
+          <div class="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition-colors mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">تحليل سلوك المستخدم</h3>
+          <p class="text-textMuted text-sm leading-relaxed">دراسة سلوك المستخدمين وفهم احتياجاتهم الحقيقية، بناء المنتجات على أسس علمية وتحسين التجربة باستمرار.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 group reveal">
+          <div class="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition-colors mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">تسليم متكامل</h3>
+          <p class="text-textMuted text-sm leading-relaxed">نضمن تسليماً سلساً من المصمم إلى المطور مع توثيق شامل ومتابعة من البداية حتى الإطلاق.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 group reveal">
+          <div class="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mb-5 group-hover:bg-purple-500/20 transition-colors mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423L16.5 15.75l.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">تجارب تفاعلية مخصصة</h3>
+          <p class="text-textMuted text-sm leading-relaxed">بناء تجربة تتكيف مع التوقعات التفاعلية لمستخدميك وتوصيلها عبر واجهات متحركة ومبتكرة.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= ENGINEERING STANDARDS ========================= -->
+  <section class="py-24 px-6 bg-gradient-to-b from-surface via-slate-900/40 to-surface">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-4 reveal">
+        <h2 class="text-3xl md:text-4xl font-black">المعايير الهندسية لمشاريعنا</h2>
+      </div>
+      <p class="text-center text-textMuted mb-16 max-w-2xl mx-auto reveal">
+        نعمل في UXcode على خطوط راسخة لنضمن الحصول على أعلى جودة ممكنة في كل مشروع، نرسم أسس علمية هندسية راسخة لضمان أداء استثنائي وتجربة مستخدم لا تُنسى.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 reveal-group">
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 reveal">
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">أنظمة ولوحات تحكم ذكية</h3>
+          <p class="text-textMuted text-sm leading-relaxed">نصمم ونطور أنظمة تحكم شاملة لإدارة المحتوى والبيانات والعمليات، مع لوحات تفاعلية لتحسين الإنتاجية وتتبع الإنجازات بدقة.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 reveal">
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">هندسة برمجية مخصصة</h3>
+          <p class="text-textMuted text-sm leading-relaxed">نبني بعيداً عن القوالب الجاهزة والمحدودية، كود نظيف ومتطور وقابل للتوسع باستخدام Tailwind وأحدث أُطر العمل.</p>
+        </div>
+
+        <div class="card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl p-7 transition-all duration-300 reveal">
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold mb-2">علم النفس التصميمي</h3>
+          <p class="text-textMuted text-sm leading-relaxed">نستخدم مبادئ علم النفس المعرفي لبناء تجارب تستجيب لتوقعات المستخدمين الطبيعية، نصمم للعقل قبل أن نصمم للعين.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= JOURNEY ========================= -->
+  <section id="work" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-4 reveal">
+        <h2 class="text-3xl md:text-4xl font-black">رحلة مشروعك معنا</h2>
+      </div>
+      <p class="text-center text-textMuted mb-16 max-w-xl mx-auto text-sm reveal">
+        سلسلة واضحة ومدروسة لنحول فكرتك إلى منتج رقمي حقيقي، من البداية وحتى الانطلاق، كل خطوة محسوبة.
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal-group">
+
+        <div class="bg-card border border-border rounded-2xl p-6 hover:border-blue-500/40 transition-all duration-300 reveal">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-8 h-8 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-center text-blue-400 font-black text-sm">01</span>
+            <div class="flex-1 h-px step-line opacity-30"></div>
+          </div>
+          <h4 class="font-bold mb-2">الاستكشاف والتحليل</h4>
+          <p class="text-textMuted text-xs leading-relaxed">نبدأ بفهم عميق لاحتياجاتك ومستخدميك، تحليل السوق والمنافسين، ووضع أساس متين.</p>
+        </div>
+
+        <div class="bg-card border border-border rounded-2xl p-6 hover:border-blue-500/40 transition-all duration-300 reveal">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-8 h-8 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-center text-blue-400 font-black text-sm">02</span>
+            <div class="flex-1 h-px step-line opacity-30"></div>
+          </div>
+          <h4 class="font-bold mb-2">التجربة البصرية والمعمارية</h4>
+          <p class="text-textMuted text-xs leading-relaxed">نصمم نماذج أولية تفاعلية، نختبر مع مستخدمين حقيقيين ونتأكد من صحة كل قرار.</p>
+        </div>
+
+        <div class="bg-card border border-border rounded-2xl p-6 hover:border-blue-500/40 transition-all duration-300 reveal">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-8 h-8 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center justify-center text-purple-400 font-black text-sm">03</span>
+            <div class="flex-1 h-px bg-gradient-to-l from-purple-500 to-blue-500 opacity-30"></div>
+          </div>
+          <h4 class="font-bold mb-2">الهندسة والبناء</h4>
+          <p class="text-textMuted text-xs leading-relaxed">نحول التصميم إلى منتج حقيقي بأعلى معايير الكود النظيف والأداء العالي.</p>
+        </div>
+
+        <div class="bg-card border border-border rounded-2xl p-6 hover:border-blue-500/40 transition-all duration-300 reveal">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-8 h-8 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center justify-center text-purple-400 font-black text-sm">04</span>
+          </div>
+          <h4 class="font-bold mb-2">الجودة والإطلاق</h4>
+          <p class="text-textMuted text-xs leading-relaxed">اختبار شامل على جميع الأجهزة والمتصفحات وإطلاق المنتج بكل ثقة مع متابعة ما بعد الإطلاق.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= FAQ ========================= -->
+  <section class="py-24 px-6 bg-gradient-to-b from-surface via-slate-900/30 to-surface">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-4 reveal">
+        <h2 class="text-3xl md:text-4xl font-black">أسئلة يطرحها عملاؤنا</h2>
+      </div>
+      <p class="text-center text-textMuted mb-14 text-sm reveal">كل ما تحتاج معرفته قبل البداية معنا.</p>
+      <div class="space-y-4">
+
+        <details class="bg-card border border-border rounded-2xl overflow-hidden reveal">
+          <summary class="flex items-center justify-between gap-4 p-6 cursor-pointer hover:bg-cardHover transition-colors">
+            <span class="font-semibold text-base">هل تستخدمون قوالب جاهزة في تنفيذ المواقع؟</span>
+            <span class="faq-icon w-7 h-7 bg-blue-500/10 border border-blue-500/30 rounded-full flex items-center justify-center text-blue-400 text-xl leading-none flex-shrink-0">+</span>
+          </summary>
+          <div class="px-6 pb-6 text-textMuted text-sm leading-relaxed border-t border-border pt-4">
+            لا، نبني كل مشروع من الصفر بكود مخصص. قد نستخدم مكتبات مفتوحة المصدر كـ Tailwind وReact لتسريع التطوير دون المساس بجودة التخصيص.
+          </div>
+        </details>
+
+        <details class="bg-card border border-border rounded-2xl overflow-hidden reveal">
+          <summary class="flex items-center justify-between gap-4 p-6 cursor-pointer hover:bg-cardHover transition-colors">
+            <span class="font-semibold text-base">هل يمكنكم تنفيذ أنظمة متخصصة ومعقدة مثل لوحات التحكم؟</span>
+            <span class="faq-icon w-7 h-7 bg-blue-500/10 border border-blue-500/30 rounded-full flex items-center justify-center text-blue-400 text-xl leading-none flex-shrink-0">+</span>
+          </summary>
+          <div class="px-6 pb-6 text-textMuted text-sm leading-relaxed border-t border-border pt-4">
+            بالتأكيد، نتخصص في بناء Custom Web Apps بما يشمل لوحات التحكم المعقدة والأنظمة التفاعلية المدمجة بالبيانات بمرونة عالية.
+          </div>
+        </details>
+
+        <details class="bg-card border border-border rounded-2xl overflow-hidden reveal">
+          <summary class="flex items-center justify-between gap-4 p-6 cursor-pointer hover:bg-cardHover transition-colors">
+            <span class="font-semibold text-base">ما الذي يضمن لي أن الكود البرمجي سيطابق التصميم تماماً؟</span>
+            <span class="faq-icon w-7 h-7 bg-blue-500/10 border border-blue-500/30 rounded-full flex items-center justify-center text-blue-400 text-xl leading-none flex-shrink-0">+</span>
+          </summary>
+          <div class="px-6 pb-6 text-textMuted text-sm leading-relaxed border-t border-border pt-4">
+            نعمل بمنهجية Pixel-Perfect حيث يتعاون المصمم والمطور في مراحل التسليم، ونستخدم Figma Inspect وDesign Tokens لضمان التطابق التام.
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </section>
+<!-- ========================= PORTFOLIO ========================= -->
+<section id="portfolio" class="py-24 px-6 bg-gradient-to-b from-surface via-slate-900/30 to-surface">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-4 reveal">
+      <h2 class="text-3xl md:text-4xl font-black">أعمالنا: حيث يلتقي الفن بالمنطق البرمجي</h2>
+    </div>
+    <p class="text-center text-textMuted mb-10 max-w-2xl mx-auto text-sm reveal">
+      نحن نصمم ونبني واجهات وتجارب مستخدم لا تبدو فقط مذهلة، بل تعمل بكفاءة هندسية عالية لتلبية احتياجات الأعمال المعقدة.
+    </p>
+
+    <!-- Filter Tabs -->
+    <div id="pf-filters" class="flex justify-center flex-wrap gap-2 mb-14 reveal">
+      <button data-filter="all"       class="pf-filter-btn active-filter border border-blue-500 bg-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-200">الكل</button>
+      <button data-filter="ui"        class="pf-filter-btn border border-border text-textMuted hover:border-blue-500/50 hover:text-white text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-200">تصميم UI/UX</button>
+      <button data-filter="web"       class="pf-filter-btn border border-border text-textMuted hover:border-blue-500/50 hover:text-white text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-200">تطبيقات ويب</button>
+      <button data-filter="dashboard" class="pf-filter-btn border border-border text-textMuted hover:border-blue-500/50 hover:text-white text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-200">لوحات تحكم</button>
+      <button data-filter="mobile"    class="pf-filter-btn border border-border text-textMuted hover:border-blue-500/50 hover:text-white text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-200">تطبيقات موبايل</button>
+    </div>
+
+    <!-- Cards Grid -->
+   <div id="pf-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 reveal-group">
+
+  <!-- Card 1 -->
+  <div class="pf-card card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all duration-300 reveal" data-cat="web">
+    <div class="w-full aspect-[16/9] overflow-hidden">
+      <img src="/speak-ai-eight.vercel.app_.png" alt="SpeakSmart AI" class="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-105">
+    </div>
+    <div class="p-5">
+      <h4 class="font-bold text-base mb-1 text-right">SpeakSmart AI</h4>
+      <p class="text-textMuted text-xs mb-4 leading-relaxed text-right">منصة ذكاء اصطناعي لتعلم اللغة الإنجليزية للناطقين بالعربية</p>
+      <div class="flex items-center justify-between border-t border-border/50 pt-3">
+     <div class="flex items-center gap-2">
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="رابط المشروع">
+    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="مشاركة">
+    <i class="fa-solid fa-share-nodes text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="تفاصيل">
+    <i class="fa-solid fa-link text-xs"></i>
+  </a>
+</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">موقع متجاوب</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">React</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="pf-card card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all duration-300 reveal" data-cat="ui">
+    <div class="w-full aspect-[16/9] overflow-hidden">
+      <img src="/handmade.png" alt="Handmade" class="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-105">
+    </div>
+    <div class="p-5">
+      <h4 class="font-bold text-base mb-1 text-right">إيديا مصرية</h4>
+      <p class="text-textMuted text-xs mb-4 leading-relaxed text-right">منصة للمنتجات اليدوية المصرية مع تصميم UI/UX احترافي</p>
+      <div class="flex items-center justify-between border-t border-border/50 pt-3">
+      <div class="flex items-center gap-2">
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="رابط المشروع">
+    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="مشاركة">
+    <i class="fa-solid fa-share-nodes text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="تفاصيل">
+    <i class="fa-solid fa-link text-xs"></i>
+  </a>
+</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">تصميم UI/UX</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">Figma</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="pf-card card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all duration-300 reveal" data-cat="dashboard">
+    <div class="w-full aspect-[16/9] bg-gradient-to-br from-indigo-900/40 to-slate-800 flex items-center justify-center">
+     <img src="/localhost_7283_Customer.png" alt="">
+    </div>
+    <div class="p-5">
+      <h4 class="font-bold text-base mb-1 text-right">لوحة تحكم إدارية</h4>
+      <p class="text-textMuted text-xs mb-4 leading-relaxed text-right">نظام إدارة متكامل لمتابعة المبيعات والموظفين والتقارير</p>
+      <div class="flex items-center justify-between border-t border-border/50 pt-3">
+      <div class="flex items-center gap-2">
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="رابط المشروع">
+    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="مشاركة">
+    <i class="fa-solid fa-share-nodes text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="تفاصيل">
+    <i class="fa-solid fa-link text-xs"></i>
+  </a>
+</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">لوحة تحكم</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">React</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4 -->
+  <div class="pf-card card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all duration-300 reveal" data-cat="mobile">
+    <div class="w-full aspect-[16/9] bg-gradient-to-br from-cyan-900/40 to-slate-800 flex items-center justify-center">
+     <img src="/akar.png" alt="">
+    </div>
+    <div class="p-5">
+      <h4 class="font-bold text-base mb-1 text-right">تطبيق حجز مواعيد</h4>
+      <p class="text-textMuted text-xs mb-4 leading-relaxed text-right">تطبيق موبايل لحجز المواعيد والخدمات مع إشعارات فورية</p>
+      <div class="flex items-center justify-between border-t border-border/50 pt-3">
+      <div class="flex items-center gap-2">
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="رابط المشروع">
+    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="مشاركة">
+    <i class="fa-solid fa-share-nodes text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="تفاصيل">
+    <i class="fa-solid fa-link text-xs"></i>
+  </a>
+</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">تطبيق موبايل</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">React Native</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 5 -->
+  <div class="pf-card card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all duration-300 reveal" data-cat="web">
+    <div class="w-full aspect-[16/9] bg-gradient-to-br from-emerald-900/40 to-slate-800 flex items-center justify-center">
+     <img src="/127.0.0.1_5501_index.html (6).png" alt="">
+    </div>
+    <div class="p-5">
+      <h4 class="font-bold text-base mb-1 text-right">منصة عقارية</h4>
+      <p class="text-textMuted text-xs mb-4 leading-relaxed text-right">منصة لعرض وبيع العقارات مع خرائط تفاعلية وفلترة متقدمة</p>
+      <div class="flex items-center justify-between border-t border-border/50 pt-3">
+      <div class="flex items-center gap-2">
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="رابط المشروع">
+    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="مشاركة">
+    <i class="fa-solid fa-share-nodes text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="تفاصيل">
+    <i class="fa-solid fa-link text-xs"></i>
+  </a>
+</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">موقع متجاوب</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 font-semibold">Leaflet Maps</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 6 -->
+  <div class="pf-card card-glow bg-card border border-border hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all duration-300 reveal" data-cat="ui">
+    <div class="w-full aspect-[16/9] bg-gradient-to-br from-pink-900/40 to-slate-800 flex items-center justify-center">
+    <img src="/localhost_7243_Customer_Home_Index.png" alt="">
+    </div>
+    <div class="p-5">
+      <h4 class="font-bold text-base mb-1 text-right">هوية بصرية لشركة</h4>
+      <p class="text-textMuted text-xs mb-4 leading-relaxed text-right">تصميم هوية بصرية متكاملة شاملة الشعار والألوان والخطوط</p>
+      <div class="flex items-center justify-between border-t border-border/50 pt-3">
+      <div class="flex items-center gap-2">
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="رابط المشروع">
+    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="مشاركة">
+    <i class="fa-solid fa-share-nodes text-xs"></i>
+  </a>
+  <a href="#" class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="تفاصيل">
+    <i class="fa-solid fa-link text-xs"></i>
+  </a>
+</div>
+        <div class="flex flex-wrap gap-1.5 justify-end">
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-semibold">هوية بصرية</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold">تصميم UI/UX</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+    <!-- CTA -->
+    <!-- <div class="relative bg-card border border-border rounded-3xl p-12 text-center mt-16 overflow-hidden reveal">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none"></div>
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent"></div>
+      <span class="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-5">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+        مشروعك القادم يبدأ من هنا
+      </span>
+      <h3 class="text-2xl md:text-3xl font-black mb-3">هل أنت مستعد لإطلاق مشروعك الرقمي؟</h3>
+      <p class="text-textMuted text-sm mb-8 max-w-md mx-auto">دعنا نتحدث عن كيف يمكن لخبراتنا أن تسرع من نجاحك.</p>
+      <a href="#contact" class="btn-glow bg-brand hover:bg-brandDark text-white font-bold px-8 py-3.5 rounded-full transition-all duration-200 text-sm">
+        ابدأ مشروعك معنا ←
+      </a>
+    </div> -->
+
+  </div>
+</section>
+  <!-- ========================= CTA ========================= -->
+  <section id="contact" class="py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="relative bg-card border border-border rounded-3xl p-12 overflow-hidden reveal">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none"></div>
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent"></div>
+        <span class="inline-flex items-center gap-2 border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+          جاهزون للعمل معك الآن
+        </span>
+        <h2 class="text-3xl md:text-4xl font-black mb-4">
+          هل أنت مستعد لإطلاق<br />
+          <span class="gradient-text">مشروعك الرقمي؟</span>
+        </h2>
+        <p class="text-textMuted mb-10 text-sm leading-relaxed max-w-lg mx-auto">
+          احجز استشارة مجانية اليوم ودعنا نحول فكرتك إلى منتج رقمي يلمس المستخدم ويبني المستقبل.
+        </p>
+        <div class="flex items-center justify-center gap-4 flex-wrap">
+          <a href="mailto:hello@uxcode.com" class="btn-glow bg-brand hover:bg-brandDark text-white font-bold px-8 py-3.5 rounded-full transition-all duration-200 text-sm">
+            احجز استشارة مجانية
+          </a>
+          <a href="#services" class="border border-border hover:border-blue-500/50 text-textMuted hover:text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 text-sm">
+            تواصل معنا
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= FOOTER ========================= -->
+ <footer class="border-t border-border px-6 pt-12 pb-8">
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Top Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+
+      <!-- Brand -->
+      <div>
+        <div class="font-black text-2xl mb-3">
+          <span class="text-white">UX</span><span class="gradient-text">code</span>
+        </div>
+        <p class="text-textMuted text-sm leading-relaxed mb-5">
+          نجمع بين جمال التصميم ودقة البرمجة لبناء تجارب رقمية استثنائية.
+        </p>
+        <!-- Social Icons -->
+        <div class="flex items-center gap-3">
+          <a href="#" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-blue-500/50 hover:text-blue-400 flex items-center justify-center text-textMuted transition-all duration-200" title="Facebook">
+            <i class="fa-brands fa-facebook-f text-sm"></i>
+          </a>
+          <a href="#" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-blue-500/50 hover:text-blue-400 flex items-center justify-center text-textMuted transition-all duration-200" title="Instagram">
+            <i class="fa-brands fa-instagram text-sm"></i>
+          </a>
+          <a href="#" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-blue-500/50 hover:text-blue-400 flex items-center justify-center text-textMuted transition-all duration-200" title="LinkedIn">
+            <i class="fa-brands fa-linkedin-in text-sm"></i>
+          </a>
+          <a href="#" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-blue-500/50 hover:text-blue-400 flex items-center justify-center text-textMuted transition-all duration-200" title="WhatsApp">
+            <i class="fa-brands fa-whatsapp text-sm"></i>
+          </a>
+          <a href="#" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-blue-500/50 hover:text-blue-400 flex items-center justify-center text-textMuted transition-all duration-200" title="Behance">
+            <i class="fa-brands fa-behance text-sm"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div>
+        <h4 class="font-bold text-white mb-4 text-sm">روابط سريعة</h4>
+        <ul class="space-y-2.5 text-sm text-textMuted">
+          <li><a href="#services"  class="hover:text-white transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-left text-xs text-blue-500/60"></i>خدماتنا</a></li>
+          <li><a href="#portfolio" class="hover:text-white transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-left text-xs text-blue-500/60"></i>أعمالنا</a></li>
+          <li><a href="#work"      class="hover:text-white transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-left text-xs text-blue-500/60"></i>رحلة المشروع</a></li>
+          <li><a href="#contact"   class="hover:text-white transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-left text-xs text-blue-500/60"></i>تواصل معنا</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact Info -->
+      <div>
+        <h4 class="font-bold text-white mb-4 text-sm">تواصل معنا</h4>
+        <ul class="space-y-3 text-sm text-textMuted">
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+              <i class="fa-solid fa-envelope text-xs"></i>
+            </span>
+            <a href="mailto:hello@uxcode.com" class="hover:text-white transition-colors">hello@uxcode.com</a>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+              <i class="fa-brands fa-whatsapp text-xs"></i>
+            </span>
+            <a href="https://wa.me/201000000000" class="hover:text-white transition-colors" target="_blank">+20 100 000 0000</a>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+              <i class="fa-solid fa-location-dot text-xs"></i>
+            </span>
+            <span>مصر — القاهرة</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="border-t border-border/50 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-textMuted text-xs">
+      <p>© 2026 UXcode. جميع الحقوق محفوظة.</p>
+      <p class="flex items-center gap-1.5">
+        صُنع بـ <i class="fa-solid fa-heart text-red-500 text-xs"></i> في مصر
+      </p>
+    </div>
+
+  </div>
+</footer>
+
+  <!-- ========================= JS (zero deps) ========================= -->
+  <script>
+    // ─── LOADER ───────────────────────────────────────────────
+    const loader = document.getElementById('page-loader');
+    document.body.style.overflow = 'hidden';
+
+    // wait for bar animation to finish (~1.2s) then exit
+    setTimeout(() => {
+      loader.classList.add('exit');
+      document.body.style.overflow = '';
+      loader.addEventListener('animationend', () => {
+        loader.style.display = 'none';
+      }, { once: true });
+
+      // trigger hero entrance
+      document.getElementById('hero-section').classList.add('ready');
+      document.getElementById('main-nav').classList.add('ready');
+
+      // start float after entrance settles
+      setTimeout(() => {
+        document.getElementById('hero-img').classList.add('float-anim');
+      }, 900);
+
+    }, 1350);
+
+    // ─── SCROLL REVEAL (Intersection Observer) ────────────────
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealEls.forEach(el => observer.observe(el));
+     document.addEventListener('DOMContentLoaded', function () {
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    let menuOpen = false;
+
+    if (!menuToggle || !mobileMenu) return;
+
+    menuToggle.addEventListener('click', function () {
+      menuOpen = !menuOpen;
+      const lines = menuToggle.querySelectorAll('.ham-line');
+      if (menuOpen) {
+        mobileMenu.style.maxHeight = mobileMenu.scrollHeight + 'px';
+        mobileMenu.classList.replace('border-border/0', 'border-border/50');
+        lines[0].style.transform = 'translateY(8px) rotate(45deg)';
+        lines[1].style.opacity   = '0';
+        lines[2].style.transform = 'translateY(-8px) rotate(-45deg)';
+      } else {
+        closeMenu(lines);
+      }
+    });
+
+    function closeMenu(lines) {
+      menuOpen = false;
+      mobileMenu.style.maxHeight = '0';
+      mobileMenu.classList.replace('border-border/50', 'border-border/0');
+      const l = lines || menuToggle.querySelectorAll('.ham-line');
+      l[0].style.transform = '';
+      l[1].style.opacity   = '1';
+      l[2].style.transform = '';
+    }
+
+    mobileMenu.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        closeMenu();
+      });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (menuOpen && !menuToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
+        closeMenu();
+      }
+    });
+  });
+  // ─── COUNTER ANIMATION ────────────────────────────────────
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+    const target = +el.dataset.target;
+    let current = 0;
+    const step = Math.ceil(target / 40);
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current + (target === 100 ? '' : '+');
+      if (current >= target) clearInterval(timer);
+    }, 35);
+    counterObserver.unobserve(el);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+
+// ─── PORTFOLIO FILTER ─────────────────────────────────────
+document.querySelectorAll('.pf-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pf-filter-btn').forEach(b => {
+      b.classList.remove('bg-blue-500', 'border-blue-500', 'text-white');
+      b.classList.add('border-border', 'text-textMuted');
+    });
+    btn.classList.add('bg-blue-500', 'border-blue-500', 'text-white');
+    btn.classList.remove('border-border', 'text-textMuted');
+    const filter = btn.dataset.filter;
+    document.querySelectorAll('.pf-card').forEach(card => {
+      card.style.display = (filter === 'all' || card.dataset.cat === filter) ? '' : 'none';
+    });
+  });
+});
+
+// ─── ACTIVE NAV ON SCROLL ─────────────────────────────────
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}, { passive: true });
+  </script>
+<!-- ========================= WHATSAPP FLOAT ========================= -->
+<a href="https://wa.me/201000000000" target="_blank"
+   class="fixed bottom-6 left-6 z-50 group"
+   title="تواصل معنا على واتساب">
+
+  <!-- Pulse ring -->
+  <span class="absolute inset-0 rounded-full bg-green-500 opacity-30 animate-ping"></span>
+
+  <!-- Button -->
+  <span class="relative flex items-center justify-center w-14 h-14 rounded-full bg-green-500 hover:bg-green-400 shadow-lg shadow-green-500/30 transition-all duration-300 group-hover:scale-110">
+    <i class="fa-brands fa-whatsapp text-white text-2xl"></i>
+  </span>
+
+  <!-- Tooltip -->
+  <span class="absolute bottom-16 left-1/2 -translate-x-1/2 bg-card border border-border text-white text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+    تواصل معنا
+  </span>
+
+</a>
+</body>
+</html>
